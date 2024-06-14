@@ -14,18 +14,19 @@ statements by automatically managing and escaping parameters.
 
 ```javascript
 const {sql, $} = require('prep-composer');
-const {sqlstring} = require('sqlstring'); // optional
+const SqlString = require('sqlstring'); // optional
 
-const query = sql('SELECT * FROM users WHERE name =', $('root'), 'AND age >=', $(18));
+const name = "O'Brien";
+const query = sql('SELECT * FROM users WHERE name =', $(name), 'AND age >=', $(18));
 
 console.log(query.toString());
 // SELECT * FROM users WHERE name = ? AND age >= ?
 
 console.log(query.parameters);
-// ['root', 18]
+// [ "O'Brien", 18]
 
-console.log(query.toString(sqlstring));
-// SELECT * FROM users WHERE name = 'root' AND age >= 18
+console.log(query.toString(SqlString.escape));
+// SELECT * FROM users WHERE name = 'O\'Brien' AND age >= 18
 ```
 
 ## License
