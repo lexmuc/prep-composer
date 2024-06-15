@@ -20,20 +20,19 @@ const {sql, $} = require('prep-composer');
 const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
-const $selectFromUsers = sql('SELECT * FROM', $['users']);
-const $condition = sql(
-    $['name'], '=', $(name), 'AND age >=', $(18) // identifier escaping is optional
-);
-const $query = sql($selectFromUsers, 'WHERE', $condition);
 
-console.log($query.toString());
-// SELECT * FROM `users` WHERE `name` = ? AND age >= ?
+const selectFromPart = sql('SELECT * FROM', $['users']); // identifier escaping is optional
+const conditionPart = sql('name =', $(name), 'AND age >=', $(18));
+const query = sql(selectFromPart, 'WHERE', conditionPart);
 
-console.log($query.parameters);
+console.log(query.toString());
+// SELECT * FROM `users` WHERE name = ? AND age >= ?
+
+console.log(query.parameters);
 // [ "O'Brien", 18]
 
-console.log($query.toString(SqlString.escape));
-// SELECT * FROM `users` WHERE `name` = 'O\'Brien' AND age >= 18
+console.log(query.toString(SqlString.escape));
+// SELECT * FROM `users` WHERE name = 'O\'Brien' AND age >= 18
 ```
 
 ## Installation
