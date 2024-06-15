@@ -1,6 +1,6 @@
 {
   "name": "prep-composer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight JavaScript utility that facilitates convenient and safe composition of SQL statements by automatically managing and escaping variable parts.",
   "keywords": [
     "sql",
