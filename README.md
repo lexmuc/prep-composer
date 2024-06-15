@@ -36,6 +36,14 @@ console.log($query.toString(SqlString.escape));
 // SELECT * FROM `users` WHERE `name` = 'O\'Brien' AND age >= 18
 ```
 
+## Installation
+
+You can install **prep-composer** using npm:
+
+```bash
+npm install prep-composer
+```
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
