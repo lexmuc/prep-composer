@@ -12,7 +12,7 @@ statements by automatically managing and escaping parameters.
 - **Flexible Integration**: Compatible with established escaping utilities like **sqlstring**, and supports `?`
   placeholders for prepared statements.
 - **Dialect Compatibility**: Designed to work with all SQL dialects; identifier escaping is currently optimized for
-  MySQL and compatible databases using `backtick` escaping.
+  MySQL and compatible databases using \`backtick\` escaping.
 
 ## Usage
 
