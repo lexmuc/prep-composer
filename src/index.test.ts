@@ -50,14 +50,11 @@ test('$ can be used to conveniently create a single Value fragment', () => {
     );
 });
 
-test('a space is automatically added at the end of a literal fragment before a value if required', () => {
+test('$ can be used to create an identifier fragment that is turned into a literal with backticks', () => {
     expectFragments(
-        sql('SELECT * FROM my_table WHERE field_a =', $('x'), ' AND field_b = ', $(2))
+        sql('SELECT * FROM ', $['my_table'])
     )(
-        new Literal('SELECT * FROM my_table WHERE field_a = '),
-        new Value('x'),
-        new Literal(' AND field_b = '),
-        new Value(2),
+        new Literal('SELECT * FROM `my_table`'),
     );
 });
 
@@ -70,6 +67,38 @@ test('a space is automatically added at the beginning of a literal after a value
         new Literal(' AND field_b = '),
         new Value(2),
         new Literal(' ORDER BY field_c'),
+    );
+});
+
+test('a space is automatically added before an escaped identifier if required', () => {
+    expectFragments(
+        sql('SELECT * FROM', $['my_table'], ' WHERE TRUE')
+    )(
+        new Literal('SELECT * FROM `my_table` WHERE TRUE'),
+    );
+});
+
+test('a space is automatically added after an escaped identifier if required', () => {
+    expectFragments(
+        sql('SELECT * FROM ', $['my_table'], 'WHERE TRUE')
+    )(
+        new Literal('SELECT * FROM `my_table` WHERE TRUE'),
+    );
+});
+
+test('identifiers can be chained and are separated by a dot', () => {
+    expectFragments(
+        sql('SELECT * FROM', $['my_db']['my_table'], 'WHERE TRUE')
+    )(
+        new Literal('SELECT * FROM `my_db`.`my_table` WHERE TRUE'),
+    );
+});
+
+test('backticks in identifiers are escaped as double backticks', () => {
+    expectFragments(
+        sql('SELECT * FROM', $['my`table'], 'WHERE TRUE')
+    )(
+        new Literal('SELECT * FROM `my``table` WHERE TRUE'),
     );
 });
 

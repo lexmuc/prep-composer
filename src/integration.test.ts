@@ -11,18 +11,23 @@ const escapeFn = (value: any) => {
     else return SqlString.escape(value);
 };
 
+const $table = $['employees'];
+const $idField = $['employee_id'];
+const $nameField = $['name'];
+const $hireDateField = $['hire_date'];
+
 const $create = sql(
-    'CREATE TABLE employees (',
-    'employee_id INT PRIMARY KEY,',
-    'name VARCHAR(50),',
-    'hire_date DATE',
+    'CREATE TABLE', $table, '(',
+    $idField, 'INT PRIMARY KEY,',
+    $nameField, 'VARCHAR(50),',
+    $hireDateField, 'DATE',
     ')'
 );
 
 const name1 = "O'Brien";
 const name2 = 'Doe "John"';
 const $insert = sql(
-    'INSERT INTO employees (employee_id, name, hire_date) VALUES (',
+    'INSERT INTO employees (', $idField, ', ',  $nameField, ', ', $hireDateField, ') VALUES (',
     $(1), ', ', $(name1), ', ', $('2020-01-01'),
     '), (',
     $(2), ', ', $(name2), ', ', $('2020-01-02'),

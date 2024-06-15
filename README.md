@@ -1,14 +1,17 @@
 # prep-composer
+
 **prep-composer** is a lightweight JavaScript utility that facilitates convenient and safe composition of SQL
 statements by automatically managing and escaping parameters.
 
 ## Features
 
 - Inline parameter values without worrying about their order and number.
+- Identifier escaping
 - Integrates with established escaping utilities like **sqlstring**, or outputs `?` placeholders for prepared
   statements.
-- Programmatically compose complex SQL statements by breaking them up into independent segments.
-- Works with all SQL dialects.
+- Compose complex SQL statements by breaking them up into independent segments.
+- Works with all SQL dialects but if identifier escaping is used it currently only works for MySQL and compatible
+  DBs (\`backtick\` escaping).
 
 ## Usage
 
@@ -17,16 +20,20 @@ const {sql, $} = require('prep-composer');
 const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
-const query = sql('SELECT * FROM users WHERE name =', $(name), 'AND age >=', $(18));
+const $selectFromUsers = sql('SELECT * FROM', $['users']);
+const $condition = sql(
+    $['name'], '=', $(name), 'AND age >=', $(18) // identifier escaping is optional
+);
+const $query = sql($selectFromUsers, 'WHERE', $condition);
 
-console.log(query.toString());
-// SELECT * FROM users WHERE name = ? AND age >= ?
+console.log($query.toString());
+// SELECT * FROM `users` WHERE `name` = ? AND age >= ?
 
-console.log(query.parameters);
+console.log($query.parameters);
 // [ "O'Brien", 18]
 
-console.log(query.toString(SqlString.escape));
-// SELECT * FROM users WHERE name = 'O\'Brien' AND age >= 18
+console.log($query.toString(SqlString.escape));
+// SELECT * FROM `users` WHERE `name` = 'O\'Brien' AND age >= 18
 ```
 
 ## License
