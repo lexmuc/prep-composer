@@ -3,15 +3,16 @@
 **prep-composer** is a lightweight JavaScript utility that facilitates convenient and safe composition of SQL
 statements by automatically managing and escaping parameters.
 
-## Features
+### Features
 
-- Inline parameter values without worrying about their order and number.
-- Identifier escaping
-- Integrates with established escaping utilities like **sqlstring**, or outputs `?` placeholders for prepared
-  statements.
-- Compose complex SQL statements by breaking them up into independent segments.
-- Works with all SQL dialects but if identifier escaping is used it currently only works for MySQL and compatible
-  DBs (\`backtick\` escaping).
+- **Inline Parameter Values**: Simplifies SQL writing by automatically managing the order and number of parameter
+  values. No placeholders and separate parameter list.
+- **Modular SQL Composition**: Allows the creation of complex SQL statements through independent, reusable segments.
+- **Identifier Escaping**: Supports escaping of identifiers for enhanced security.
+- **Flexible Integration**: Compatible with established escaping utilities like **sqlstring**, and supports `?`
+  placeholders for prepared statements.
+- **Dialect Compatibility**: Designed to work with all SQL dialects; identifier escaping is currently optimized for
+  MySQL and compatible databases using `backtick` escaping.
 
 ## Usage
 
