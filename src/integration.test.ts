@@ -7,8 +7,7 @@ import {$, sql, SqlSegment} from './index';
 const escapeFn = (value: any) => {
     if (typeof value === 'string') {
         return "'" + value.replace(/'/g, "''") + "'";
-    }
-    else return SqlString.escape(value);
+    } else return SqlString.escape(value);
 };
 
 const $table = $['employees'];
@@ -16,25 +15,25 @@ const $idField = $['employee_id'];
 const $nameField = $['name'];
 const $hireDateField = $['hire_date'];
 
-const $create = sql(
-    'CREATE TABLE', $table, '(',
-    $idField, 'INT PRIMARY KEY,',
-    $nameField, 'VARCHAR(50),',
-    $hireDateField, 'DATE',
-    ')'
-);
+const fieldDefinitions = [
+    sql($idField, 'INT', 'PRIMARY KEY'),
+    sql($nameField, 'VARCHAR(50)'),
+    sql($hireDateField, 'DATE'),
+];
+
+const $create = sql('CREATE TABLE', $table, '(', fieldDefinitions, ')');
 
 const name1 = "O'Brien";
 const name2 = 'Doe "John"';
 const $insert = sql(
-    'INSERT INTO employees (', $idField, ', ',  $nameField, ', ', $hireDateField, ') VALUES (',
-    $(1), ', ', $(name1), ', ', $('2020-01-01'),
+    'INSERT INTO employees (', [$idField, $nameField, $hireDateField], ') VALUES (',
+    [$(1), $(name1), $('2020-01-01')],
     '), (',
-    $(2), ', ', $(name2), ', ', $('2020-01-02'),
+    [$(2), $(name2), $('2020-01-02')],
     ')'
 );
 
-const $select = sql('SELECT * FROM employees ORDER BY employee_id');
+const $select = sql('SELECT * FROM', $table, 'ORDER BY', $idField);
 
 const runWithEscaping = (db: Database, seg: SqlSegment) => db.exec(seg.toString(escapeFn));
 
@@ -78,9 +77,7 @@ test('it can be used with prepared statements to create a table, add rows and re
     runPrepared(db, $create);
     runPrepared(db, $insert);
 
-    const $select = sql('SELECT * FROM employees ORDER BY employee_id');
-    const rows = queryPrepared(db, $select);
-    expect(rows).toEqual([
+    expect(queryPrepared(db, $select)).toEqual([
         [1, name1, '2020-01-01'],
         [2, name2, '2020-01-02'],
     ]);

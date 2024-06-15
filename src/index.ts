@@ -45,6 +45,8 @@ export class Value {
     }
 }
 
+type Fragment = Literal | Value | SqlSegment | WrappedIdentifier | string;
+
 export class SqlSegment {
     public readonly fragments: readonly (Literal | Value)[];
     public readonly parameters: readonly any[];
@@ -54,9 +56,9 @@ export class SqlSegment {
         this.parameters = Object.freeze(fragments.filter(s => s instanceof Value).map(s => (s as Value).value));
     }
 
-    append(fragment: SqlSegment | Literal | Value | WrappedIdentifier | string): SqlSegment {
+    append(fragment: Fragment | Fragment[]): SqlSegment {
         if (typeof fragment === 'string') {
-            return this.append(new Literal(fragment));
+            return this.appendPrimitiveSegmentWithPadding(new Literal(fragment));
         } else if (fragment instanceof SqlSegment) {
             let result: SqlSegment = this;
             for (const subSegment of fragment.fragments) {
@@ -65,8 +67,26 @@ export class SqlSegment {
             return result;
         } else if (fragment instanceof WrappedIdentifier) {
             // @ts-ignore
-            return this.append(fragment[unwrapSymbol]);
+            return this.appendPrimitiveSegmentWithPadding(fragment[unwrapSymbol]);
         }
+        else if (fragment instanceof Array) {
+            let result: SqlSegment = this;
+            let index = 0;
+            for (const subFragment of fragment) {
+                if (index !== 0) {
+                    result = result.appendLiteralWithoutPadding(new Literal(', '));
+                }
+                result = result.append(subFragment);
+                index++;
+            }
+            return result;
+        }
+        else {
+            return this.appendPrimitiveSegmentWithPadding(fragment);
+        }
+    }
+
+    appendPrimitiveSegmentWithPadding(fragment: Literal | Value): SqlSegment {
         if (this.fragments.length === 0) {
             return new SqlSegment([fragment]);
         } else {
@@ -86,6 +106,21 @@ export class SqlSegment {
         }
     }
 
+    appendLiteralWithoutPadding(fragment: Literal): SqlSegment {
+        if (this.fragments.length === 0) {
+            return new SqlSegment([fragment]);
+        } else {
+            const allButLatest = this.fragments.slice(0, this.fragments.length - 1);
+            const latest = this.fragments[this.fragments.length - 1];
+            if (latest instanceof Literal) {
+                return new SqlSegment([...allButLatest, new Literal(latest.value + fragment.value)]);
+            }
+            else {
+                return new SqlSegment([...allButLatest, latest, fragment]);
+            }
+        }
+    }
+
     toString(escapeFn?: (value: any) => string): string {
         let result = '';
         for (const fragment of this.fragments) {
@@ -99,7 +134,7 @@ export class SqlSegment {
     }
 }
 
-export function sql(...args: (Literal | Value | SqlSegment | WrappedIdentifier | string)[]): SqlSegment {
+export function sql(...args: (Fragment|Fragment[])[]): SqlSegment {
     let result = new SqlSegment([]);
     for (const arg of args) {
         result = result.append(arg);

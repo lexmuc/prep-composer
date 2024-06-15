@@ -107,7 +107,37 @@ test('literal fragments are merged and separated by a space if required', () => 
         sql('SELECT', '* ', 'FROM', ' my_table', 'WHERE TRUE')
     )(
         new Literal('SELECT * FROM my_table WHERE TRUE'),
-    )
+    );
+});
+
+test('segments provided in arrays are concatenated with commas', () => {
+    const fieldList = [
+        sql('3 + 4 as', $['sum']),
+        sql($('Miller'), 'as', $['name']),
+        sql($['age'], 'as', $['number_of_years']),
+    ];
+    expectFragments(
+        sql('SELECT', fieldList, 'FROM my_table')
+    )(
+        new Literal('SELECT 3 + 4 as `sum`, '),
+        new Value('Miller'),
+        new Literal(' as `name`, `age` as `number_of_years` FROM my_table'),
+    );
+});
+
+test('arrays may contain literals, identifiers or values', () => {
+    const options = [
+        $['t']['some_field'],
+        $('x'),
+        'NOW()',
+    ];
+    expectFragments(
+        sql('SELECT * from my_table WHERE field IN (', options, ')')
+    )(
+        new Literal('SELECT * from my_table WHERE field IN ( `t`.`some_field`, '),
+        new Value('x'),
+        new Literal(', NOW() )'),
+    );
 });
 
 test('nested sql segments are flattened and spaces are interspersed if required', () => {
