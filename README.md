@@ -22,18 +22,18 @@ const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
 
-const selectFromPart = sql('SELECT * FROM', $['users']); // identifier escaping is optional
+const selectFromPart = sql('SELECT * FROM', $['my_db']['users']); // identifier escaping is optional
 const conditionPart = sql('name =', $(name), 'AND age >=', $(18));
 const query = sql(selectFromPart, 'WHERE', conditionPart);
 
 console.log(query.toString());
-// SELECT * FROM `users` WHERE name = ? AND age >= ?
+// SELECT * FROM `my_db`.`users` WHERE name = ? AND age >= ?
 
 console.log(query.parameters);
 // [ "O'Brien", 18]
 
 console.log(query.toString(SqlString.escape));
-// SELECT * FROM `users` WHERE name = 'O\'Brien' AND age >= 18
+// SELECT * FROM `my_db`.`users` WHERE name = 'O\'Brien' AND age >= 18
 ```
 
 ## Installation
@@ -43,6 +43,45 @@ You can install **prep-composer** using npm:
 ```bash
 npm install prep-composer
 ```
+
+## API documentation
+
+### `sql(...args: (Fragment | Fragment[])[]): SqlSegment`
+
+Creates a new `SqlSegment` composed of the provided fragments. Fragments can be strings, literals,
+identifiers, or values. Raw SQL is typically represented by a `string` fragment. It will be turned into a `Literal`
+internally. An array of fragments is flattened into the SQL segment, separated by commas. 
+
+### `Fragment`
+
+Type definition for an SQL fragment. A fragment can be a `Literal`, a `string` (will be turned into a `Literal`),
+a `Value`, an `Identifier` or an `SqlSegment`.
+
+### `$(value: any): Value`
+
+Helper function to create a new `Value` fragment for the given value. An `SqlSegment` keeps track of all contained
+values, so they can be later extracted or escaped.
+
+### `$.<identifier>` or `$[<identifier>]`
+
+Helper to create a new `Identifier` fragment for the given identifier. The identifier is immediately escaped
+with backticks when passed to the `sql` function. Identifiers can be chained: `$['db']['field']` 
+(yields `` `db`.`field` ``). It is recommended to use the square
+brackets syntax `$[<identifier>]` for consistency. Dots in identifiers are preserved (`$['db.field']` 
+yields `` `db.field` ``).
+
+### `SqlSegment`
+
+Represents a composite SQL segment composed of multiple fragments. A segment can be used as a part of another
+segment, allowing the creation of complex SQL statements.
+
+**Members**:
+  - `toString(escapeFn?: (value: any) => string): string`: Returns the SQL statement as a string. 
+    If `escapeFn` is provided, it will be used to escape values. Otherwise `?` placeholders are output.
+  - `parameters: any[]`: An array of parameter values extracted from the SQL segment.
+  - `append(fragment: Fragment | Fragment[]): SqlSegment`: Returns a new `SqlSegment` by appending the provided
+    fragment(s) to the current segment. As in the `sql` function, an array of fragments is flattened into the SQL and
+    separated by commas. Spaces are automatically added between fragments if required.
 
 ## License
 

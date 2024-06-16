@@ -19,17 +19,17 @@ export class Literal {
     }
 }
 
-// used to extract an identifier from a WrappedIdentifier (wrapped in a Proxy)
+// Used to extract an identifier that is wrapped in a Proxy object
 const unwrapSymbol = Symbol('unwrap');
 
 const escapeIdentifier = (p: string) => "`" + p.replace(/`/g, "``") + "`";
 
-export class WrappedIdentifier {
+export class Identifier {
     constructor(readonly parts: string[]) {
     }
 
-    append(s: string): WrappedIdentifier {
-        return new WrappedIdentifier([...this.parts, s]);
+    append(s: string): Identifier {
+        return new Identifier([...this.parts, s]);
     }
 
     toLiteral(): Literal {
@@ -45,7 +45,7 @@ export class Value {
     }
 }
 
-type Fragment = Literal | Value | SqlSegment | WrappedIdentifier | string;
+type Fragment = Literal | Value | SqlSegment | Identifier | string;
 
 export class SqlSegment {
     public readonly fragments: readonly (Literal | Value)[];
@@ -65,7 +65,7 @@ export class SqlSegment {
                 result = result.append(subSegment);
             }
             return result;
-        } else if (fragment instanceof WrappedIdentifier) {
+        } else if (fragment instanceof Identifier) {
             // @ts-ignore
             return this.appendPrimitiveSegmentWithPadding(fragment[unwrapSymbol]);
         }
@@ -145,15 +145,16 @@ export function sql(...args: (Fragment|Fragment[])[]): SqlSegment {
 const makeValue = (value: any) => new Value(value);
 
 // We apply a Proxy to makeValue() to intercept property access ($[...] syntax for identifiers) and expose it as $.
-// Identifiers can be chained by wrapping the identifier in a new Proxy. WrappedIdentifier|s can be unwrapped to
-// literals.
+// As a result, $ can be used with normal brackets to create a value and with square brackets to create an identifier.
+// Identifiers can be chained by wrapping the new identifier in another Proxy. The unwrap symbol is used to extract
+// the identifier from the Proxy object. The identifier is then turned into a literal with backticks.
 export const $ = new Proxy(makeValue, {
     get(target: any, p: any, receiver: any): any {
-        return wrapWithProxy(new WrappedIdentifier([p]));
+        return wrapWithProxy(new Identifier([p]));
     },
 });
 
-function wrapWithProxy(target: WrappedIdentifier) {
+function wrapWithProxy(target: Identifier) {
     return new Proxy(target, {
         get(target: any, p: any, receiver: any): any {
             if (p === unwrapSymbol) {
