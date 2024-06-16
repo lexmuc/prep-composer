@@ -21,19 +21,20 @@ const {sql, $} = require('prep-composer');
 const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
+const jobTitles = [$('Developer'), $('Designer')]; // array of escaped/variable values
 
-const selectFromPart = sql('SELECT * FROM', $['my_db']['users']); // identifier escaping is optional
-const conditionPart = sql('name =', $(name), 'AND age >=', $(18));
+const selectFromPart = sql('SELECT * FROM', $['my_db']['employees']); // identifier escaping is optional
+const conditionPart = sql('name =', $(name), 'AND job_title IN (', jobTitles, ')');
 const query = sql(selectFromPart, 'WHERE', conditionPart);
 
 console.log(query.toString());
-// SELECT * FROM `my_db`.`users` WHERE name = ? AND age >= ?
+// SELECT * FROM `my_db`.`employees` WHERE name = ? AND job_title IN ( ?, ? )
 
 console.log(query.parameters);
-// [ "O'Brien", 18]
+// [ "O'Brien", "Developer", "Designer"]
 
 console.log(query.toString(SqlString.escape));
-// SELECT * FROM `my_db`.`users` WHERE name = 'O\'Brien' AND age >= 18
+// SELECT * FROM `my_db`.`employees` WHERE name = 'O\'Brien' AND job_title IN ( 'Developer', 'Designer' )
 ```
 
 ## Installation
@@ -59,8 +60,8 @@ a `Value`, an `Identifier` or an `SqlSegment`.
 
 ### `$(value: any): Value`
 
-Helper function to create a new `Value` fragment for the given value. An `SqlSegment` keeps track of all contained
-values, so they can be later extracted or escaped.
+Helper function to create a new `Value` fragment for the given value. Values represent the variable fragments of 
+a statement that are later escaped or replaced with placeholders.
 
 ### `$.<identifier>` or `$[<identifier>]`
 
