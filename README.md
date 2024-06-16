@@ -21,10 +21,10 @@ const {sql, $} = require('prep-composer');
 const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
-const jobTitles = [$('Developer'), $('Designer')]; // array of escaped/variable values
+const jobTitles = ['Developer', 'Designer'];
 
 const selectFromPart = sql('SELECT * FROM', $['my_db']['employees']); // identifier escaping is optional
-const conditionPart = sql('name =', $(name), 'AND job_title IN (', jobTitles, ')');
+const conditionPart = sql('name =', $(name), 'AND job_title IN (', $(jobTitles), ')');
 const query = sql(selectFromPart, 'WHERE', conditionPart);
 
 console.log(query.toString());
@@ -58,10 +58,12 @@ internally. An array of fragments is flattened into the SQL segment, separated b
 Type definition for an SQL fragment. A fragment can be a `Literal`, a `string` (will be turned into a `Literal`),
 a `Value`, an `Identifier` or an `SqlSegment`.
 
-### `$(value: any): Value`
+### `$(value: any): Value|SqlSegment[]`
 
 Helper function to create a new `Value` fragment for the given value. Values represent the variable fragments of 
-a statement that are later escaped or replaced with placeholders.
+a statement that are later escaped or replaced with placeholders. If the passed value is an array, it is turned into 
+an array of `SqlSegment`s by converting all the elements to values if they are not of type `Literal` or `SqlSegment`.
+This is practical for creating `IN` conditions.
 
 ### `$.<identifier>` or `$[<identifier>]`
 

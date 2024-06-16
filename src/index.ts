@@ -142,7 +142,22 @@ export function sql(...args: (Fragment|Fragment[])[]): SqlSegment {
     return result;
 }
 
-const makeValue = (value: any) => new Value(value);
+const makeValue: (value: any) => (Value | Fragment[]) = (value: any) => {
+    if (value instanceof Array) {
+        let result = [];
+        for (const subValue of value) {
+            if (subValue instanceof Literal || subValue instanceof SqlSegment) {
+                result.push(subValue);
+            } else {
+                result.push(new Value(subValue));
+            }
+        }
+        return result;
+    }
+    else {
+        return new Value(value);
+    }
+}
 
 // We apply a Proxy to makeValue() to intercept property access ($[...] syntax for identifiers) and expose it as $.
 // As a result, $ can be used with normal brackets to create a value and with square brackets to create an identifier.

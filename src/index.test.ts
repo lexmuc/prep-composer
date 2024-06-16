@@ -164,6 +164,16 @@ test('nested segments may be empty', () => {
     );
 });
 
+test('passing an array to $() yields an array of values', () => {
+    expect(sql('WHERE field IN (', $(['1', 2, 'three']), ')'))
+        .toEqual(sql('WHERE field IN (', [$('1'), $(2), $('three')], ')'));
+});
+
+test('literals and sql segments passed to $() in an array are preserved as such', () => {
+    expect(sql('WHERE field IN (', $(['1', new Literal('2'), sql('NOW()')]), ')'))
+        .toEqual(sql('WHERE field IN (', [$('1'), new Literal('2'), sql('NOW()')], ')'));
+});
+
 test('calling toString()) on a segment without escaping function yields a string with ?-placeholders', () => {
     const segment = sql('SELECT * FROM t WHERE field_a =', $(42),'AND field_b =', $('x'));
     expect(segment.toString()).toEqual('SELECT * FROM t WHERE field_a = ? AND field_b = ?');
