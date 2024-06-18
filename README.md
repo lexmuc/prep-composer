@@ -21,20 +21,25 @@ const {sql, $} = require('prep-composer');
 const SqlString = require('sqlstring'); // optional
 
 const name = "O'Brien";
-const jobTitles = ['Developer', 'Designer'];
+const newJobTitle = 'Senior Developer';
 
-const selectFromPart = sql('SELECT * FROM', $['my_db']['employees']); // identifier escaping is optional
-const conditionPart = sql('name =', $(name), 'AND job_title IN (', $(jobTitles), ')');
-const query = sql(selectFromPart, 'WHERE', conditionPart);
+const updateTable = sql('UPDATE', $['my_db']['employees']); // identifier escaping is optional
+const fieldsToUpdate = {
+    job_title: 'Designer',
+    salary: 200000,
+};
+const condition = sql('name =', $(name));
+
+const query = sql(updateTable, 'SET', $(fieldsToUpdate), 'WHERE', condition);
 
 console.log(query.toString());
-// SELECT * FROM `my_db`.`employees` WHERE name = ? AND job_title IN ( ?, ? )
+// UPDATE `my_db`.`employees` SET `job_title` = ?, `salary` = ? WHERE name = ?
 
 console.log(query.parameters);
-// [ "O'Brien", "Developer", "Designer"]
+// [ "Designer", 200000, "O'Brien" ]
 
 console.log(query.toString(SqlString.escape));
-// SELECT * FROM `my_db`.`employees` WHERE name = 'O\'Brien' AND job_title IN ( 'Developer', 'Designer' )
+// UPDATE `my_db`.`employees` SET `job_title` = 'Designer', `salary` = 200000 WHERE name = 'O\'Brien'
 ```
 
 ## Installation
@@ -61,16 +66,23 @@ a `Value`, an `Identifier` or an `SqlSegment`.
 ### `$(value: any): Value|SqlSegment[]`
 
 Helper function to create a new `Value` fragment for the given value. Values represent the variable fragments of 
-a statement that are later escaped or replaced with placeholders. If the passed value is an array, it is turned into 
+a statement that are later escaped or replaced with placeholders.
+
+If the passed value is an array, it is turned into 
 an array of `SqlSegment`s by converting all the elements to values if they are not of type `Literal` or `SqlSegment`.
 This is practical for creating `IN` conditions.
+
+If an object is passed it will be turned into a series of escaped-key=escaped-value assignments. If values are already
+literals, values or identifiers, they are used as is. So to set a field to a static raw SQL value, you have to wrap
+the value in an `sql` function call (e.g. `{ hire_date: sql('NOW()') }`) otherwise it is interpreted as a parameter
+that has to be escaped.
 
 ### `$.<identifier>` or `$[<identifier>]`
 
 Helper to create a new `Identifier` fragment for the given identifier. The identifier is immediately escaped
 with backticks when passed to the `sql` function. Identifiers can be chained: `$['db']['field']` 
 (yields `` `db`.`field` ``). It is recommended to use the square
-brackets syntax `$[<identifier>]` for consistency. Dots in identifiers are preserved (`$['db.field']` 
+brackets syntax `$[<identifier>]` for consistency. Dots within identifiers are preserved (`$['db.field']` 
 yields `` `db.field` ``).
 
 ### `SqlSegment`

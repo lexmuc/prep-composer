@@ -68,22 +68,27 @@ export class SqlSegment {
         } else if (fragment instanceof Identifier) {
             // @ts-ignore
             return this.appendPrimitiveSegmentWithPadding(fragment[unwrapSymbol]);
-        }
-        else if (fragment instanceof Array) {
-            let result: SqlSegment = this;
-            let index = 0;
-            for (const subFragment of fragment) {
-                if (index !== 0) {
-                    result = result.appendLiteralWithoutPadding(new Literal(', '));
-                }
-                result = result.append(subFragment);
-                index++;
-            }
-            return result;
-        }
-        else {
+        } else if (fragment instanceof Array) {
+            return this.appendArray(fragment);
+        } else if (fragment instanceof Literal || fragment instanceof Value) {
             return this.appendPrimitiveSegmentWithPadding(fragment);
         }
+        else {
+            throw new Error('Unsupported fragment type: ' + fragment);
+        }
+    }
+
+    private appendArray(arr: any[]) {
+        let result: SqlSegment = this;
+        let index = 0;
+        for (const subFragment of arr) {
+            if (index !== 0) {
+                result = result.appendLiteralWithoutPadding(new Literal(', '));
+            }
+            result = result.append(subFragment);
+            index++;
+        }
+        return result;
     }
 
     appendPrimitiveSegmentWithPadding(fragment: Literal | Value): SqlSegment {
@@ -114,8 +119,7 @@ export class SqlSegment {
             const latest = this.fragments[this.fragments.length - 1];
             if (latest instanceof Literal) {
                 return new SqlSegment([...allButLatest, new Literal(latest.value + fragment.value)]);
-            }
-            else {
+            } else {
                 return new SqlSegment([...allButLatest, latest, fragment]);
             }
         }
@@ -134,7 +138,7 @@ export class SqlSegment {
     }
 }
 
-export function sql(...args: (Fragment|Fragment[])[]): SqlSegment {
+export function sql(...args: (Fragment | Fragment[])[]): SqlSegment {
     let result = new SqlSegment([]);
     for (const arg of args) {
         result = result.append(arg);
@@ -146,15 +150,28 @@ const makeValue: (value: any) => (Value | Fragment[]) = (value: any) => {
     if (value instanceof Array) {
         let result = [];
         for (const subValue of value) {
-            if (subValue instanceof Literal || subValue instanceof SqlSegment) {
+            if (subValue instanceof Literal || subValue instanceof SqlSegment || subValue instanceof Value) {
                 result.push(subValue);
             } else {
                 result.push(new Value(subValue));
             }
         }
         return result;
-    }
-    else {
+    } else if (typeof value === 'object') {
+        let result = [];
+        for (const key in value) {
+            let actualValue = value[key];
+            if (
+                !(actualValue instanceof Literal)
+                && !(actualValue instanceof SqlSegment)
+                && !(actualValue instanceof Value)
+            ) {
+                actualValue = $(actualValue);
+            }
+            result.push(sql($[key], '=', actualValue));
+        }
+        return result;
+    } else {
         return new Value(value);
     }
 }

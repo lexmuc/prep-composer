@@ -3,7 +3,7 @@
 import {$, Literal, sql, SqlSegment, Value} from "./index";
 
 function expectFragments(cs: SqlSegment) {
-    return function(...args: (Literal|Value)[]) {
+    return function (...args: (Literal | Value)[]) {
         expect(cs.fragments).toEqual(args);
     }
 }
@@ -169,24 +169,47 @@ test('passing an array to $() yields an array of values', () => {
         .toEqual(sql('WHERE field IN (', [$('1'), $(2), $('three')], ')'));
 });
 
-test('literals and sql segments passed to $() in an array are preserved as such', () => {
-    expect(sql('WHERE field IN (', $(['1', new Literal('2'), sql('NOW()')]), ')'))
+test('literals, values and sql segments passed to $() in an array are preserved as such', () => {
+    expect(sql('WHERE field IN (', $([$('1'), new Literal('2'), sql('NOW()')]), ')'))
         .toEqual(sql('WHERE field IN (', [$('1'), new Literal('2'), sql('NOW()')], ')'));
 });
 
+test('passing an object to $() is transforms it to a respective array of escaped key = value segments escaped', () => {
+    const obj = {a: 1, b: 'two'};
+    expect(sql('SET ', $(obj)))
+        .toEqual(sql('SET ', [
+            sql($['a'], '=', $(1)),
+            sql($['b'], '=', $('two')),
+        ]));
+});
+
+test('literal fragments, values and sql segments in object values are preserved when passing an object to sql', () => {
+    const obj = {
+        a: new Literal('NOW()'),
+        b: sql('(SELECT 1 +', $(2), ')'),
+        c: new Value(3),
+    };
+    expect(sql('SET ', $(obj)))
+        .toEqual(sql('SET ', [
+            sql($['a'], '=', new Literal('NOW()')),
+            sql($['b'], '=', sql('(SELECT 1 +', $(2), ')')),
+            sql($['c'], '=', $(3)),
+        ]));
+});
+
 test('calling toString()) on a segment without escaping function yields a string with ?-placeholders', () => {
-    const segment = sql('SELECT * FROM t WHERE field_a =', $(42),'AND field_b =', $('x'));
+    const segment = sql('SELECT * FROM t WHERE field_a =', $(42), 'AND field_b =', $('x'));
     expect(segment.toString()).toEqual('SELECT * FROM t WHERE field_a = ? AND field_b = ?');
 });
 
 test('passing an escaping function to toString() yields a respectively escaped string', () => {
-   const segment = sql('SELECT * FROM t WHERE field_a =', $(42),'AND field_b =', $('x'));
-   expect(segment.toString(fakeEscape))
-       .toEqual('SELECT * FROM t WHERE field_a = <42> AND field_b = <x>');
+    const segment = sql('SELECT * FROM t WHERE field_a =', $(42), 'AND field_b =', $('x'));
+    expect(segment.toString(fakeEscape))
+        .toEqual('SELECT * FROM t WHERE field_a = <42> AND field_b = <x>');
 });
 
 test('parameters in a segment can be accessed via the parameters field', () => {
-    const segment = sql('SELECT * FROM t WHERE field_a =', $(42),'AND field_b =', $('x'));
+    const segment = sql('SELECT * FROM t WHERE field_a =', $(42), 'AND field_b =', $('x'));
     expect(segment.parameters).toEqual([42, 'x']);
 });
 
